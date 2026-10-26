@@ -25,7 +25,17 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # The mobile web bundle resolves React Native/Expo from mobile/'s own install.
       - uses: ./.github/actions/install-mobile-dependencies
-      - run: pnpm run build:mac
+      # Same steps as `pnpm run build:mac`, but arm64 only: the runner installs only its own native variants.
+      - name: Build app
+        run: |
+          pnpm run build:desktop
+          pnpm run build:computer-macos
+          pnpm run build:keyboard-layout-macos
+          pnpm run build:notification-status-macos
+          pnpm run ensure:electron-runtime
+          export ORCA_BUILD_COMMIT="${GITHUB_SHA:0:12}"
+          export ORCA_LOCAL_BUILD_VERSION="$(node -p "const v=require('./package.json').version;v+(v.includes('-')?'.':'-')+'local.'+Date.now()+'.'+process.env.ORCA_BUILD_COMMIT")"
+          pnpm exec electron-builder --config config/electron-builder.config.cjs --mac --arm64
       - uses: actions/upload-artifact@v4
         with:
           name: orca-mac-arm64
