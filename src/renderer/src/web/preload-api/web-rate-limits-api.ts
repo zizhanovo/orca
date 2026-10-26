@@ -155,6 +155,8 @@ export function createRateLimitsApi(): NonNullable<Partial<PreloadApi>['rateLimi
     refreshClaudeForTarget: refresh,
     fetchInactiveClaudeAccounts: refreshInactive,
     fetchInactiveCodexAccounts: refreshInactive,
+    // Why: candidate folders are paths on this device, which a web client does not have.
+    discoverExternalClaudeDirs: async () => [],
     // Why: the server host owns the config dirs; its snapshot already carries their usage.
     fetchExternalClaudeDirs: refreshInactive,
     refreshGrok: refresh,

@@ -1,5 +1,5 @@
 import { FolderPlus, X } from 'lucide-react'
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Switch } from '@/components/ui/switch'
 import { translate } from '@/i18n/i18n'
@@ -40,14 +40,45 @@ export function ExternalClaudeDirsSection(): React.JSX.Element | null {
     }
   }, [isLocalOwner, fetchExternalClaudeDirUsage])
 
-  const addUsageConfigDir = useCallback(async () => {
-    const dir = await window.api.repos.pickDirectory()
-    if (!dir || usageConfigDirs.includes(dir)) {
+  // Why: folders that look like Claude config dirs (e.g. ~/.claude-profiles/*) are offered, never auto-tracked.
+  const [candidates, setCandidates] = useState<string[]>(NO_DIRS)
+  useEffect(() => {
+    if (!isLocalOwner) {
       return
     }
-    // Main watches the settings key and refetches every tracked folder's usage.
-    await updateSettings({ claudeUsageConfigDirs: [...usageConfigDirs, dir] })
-  }, [usageConfigDirs, updateSettings])
+    let cancelled = false
+    void (async () => {
+      try {
+        const dirs = await window.api.rateLimits.discoverExternalClaudeDirs()
+        if (!cancelled) {
+          setCandidates(dirs)
+        }
+      } catch (error) {
+        console.error('Failed to discover Claude config folders:', error)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isLocalOwner, usageConfigDirs])
+
+  // Main watches the settings key and refetches every tracked folder's usage.
+  const trackUsageConfigDir = useCallback(
+    async (dir: string) => {
+      if (usageConfigDirs.includes(dir)) {
+        return
+      }
+      await updateSettings({ claudeUsageConfigDirs: [...usageConfigDirs, dir] })
+    },
+    [usageConfigDirs, updateSettings]
+  )
+
+  const addUsageConfigDir = useCallback(async () => {
+    const dir = await window.api.repos.pickDirectory()
+    if (dir) {
+      await trackUsageConfigDir(dir)
+    }
+  }, [trackUsageConfigDir])
 
   const removeUsageConfigDir = useCallback(
     async (dir: string) => {
@@ -145,6 +176,27 @@ export function ExternalClaudeDirsSection(): React.JSX.Element | null {
             </DropdownMenuItem>
           )
         })}
+        {candidates.length > 0 ? (
+          <div className="px-2 pt-1 text-[10px] text-muted-foreground">
+            {translate('status-bar.claude-usage-config-dirs-detected', 'Detected on this device')}
+          </div>
+        ) : null}
+        {candidates.map((dir) => (
+          <DropdownMenuItem
+            key={dir}
+            title={dir}
+            onSelect={(event) => {
+              event.preventDefault()
+              void trackUsageConfigDir(dir)
+            }}
+          >
+            <FolderPlus className="size-3.5 text-muted-foreground/85" />
+            <span className="min-w-0 flex-1 truncate text-[12px]">{dirLabel(dir)}</span>
+            <span className="shrink-0 text-[10px] text-muted-foreground">
+              {translate('status-bar.claude-usage-config-dir-track', 'Track')}
+            </span>
+          </DropdownMenuItem>
+        ))}
         <DropdownMenuItem
           onSelect={(event) => {
             event.preventDefault()

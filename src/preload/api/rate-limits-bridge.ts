@@ -19,6 +19,8 @@ export const rateLimitsApi = {
     ipcRenderer.invoke('rateLimits:fetchInactiveClaudeAccounts'),
   fetchInactiveCodexAccounts: (): Promise<void> =>
     ipcRenderer.invoke('rateLimits:fetchInactiveCodexAccounts'),
+  discoverExternalClaudeDirs: (): Promise<string[]> =>
+    ipcRenderer.invoke('rateLimits:discoverExternalClaudeDirs'),
   fetchExternalClaudeDirs: (): Promise<void> =>
     ipcRenderer.invoke('rateLimits:fetchExternalClaudeDirs'),
   refreshGrok: (): Promise<RateLimitState> => ipcRenderer.invoke('rateLimits:refreshGrok'),

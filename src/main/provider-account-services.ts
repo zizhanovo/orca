@@ -6,11 +6,18 @@ import type { Store } from './persistence'
 import { RateLimitService } from './rate-limits/service'
 import { resolveExternalClaudeUsageDirs } from './rate-limits/claude-external-config-dir-usage'
 import {
+  discoverClaudeConfigDirCandidates,
+  setClaudeConfigDirCandidateProvider
+} from './rate-limits/claude-config-dir-candidates'
+import {
   resolveHookConfigDirs,
   syncExternalClaudeDirHooks
 } from './claude/external-config-dir-hooks'
 import type { GlobalSettings } from '../shared/global-settings-types'
-import { getClaudeProfileRouter } from './claude-accounts/claude-profile-installed-router'
+import {
+  getClaudeObservedConfigDirs,
+  getClaudeProfileRouter
+} from './claude-accounts/claude-profile-installed-router'
 import { readUserClaudeConfigDir } from './claude-accounts/claude-profile-paths'
 import { CodexRuntimeHomeService } from './codex-accounts/runtime-home-service'
 import { CodexAccountService } from './codex-accounts/service'
@@ -70,17 +77,19 @@ export function createProviderAccountServices(
     rateLimits,
     store.getSettings()
   )
+  // Folders that already have their own row or login: System Default and managed accounts.
+  const externalDirExclusions = (settings: GlobalSettings) => ({
+    managedConfigDirs: settings.claudeManagedAccounts.map((account) => account.managedAuthPath),
+    systemConfigDir:
+      getClaudeProfileRouter()?.userConfigDir() ??
+      readUserClaudeConfigDir(process.env) ??
+      join(homedir(), '.claude')
+  })
   const hookDirsFor = (settings: GlobalSettings): string[] =>
     resolveHookConfigDirs(
       settings.claudeUsageConfigDirs ?? [],
       settings.claudeHookConfigDirs ?? [],
-      {
-        managedConfigDirs: settings.claudeManagedAccounts.map((account) => account.managedAuthPath),
-        systemConfigDir:
-          getClaudeProfileRouter()?.userConfigDir() ??
-          readUserClaudeConfigDir(process.env) ??
-          join(homedir(), '.claude')
-      }
+      externalDirExclusions(settings)
     )
   let syncedHookDirs: string[] = []
   const syncHookDirs = (settings: GlobalSettings): void => {
@@ -202,12 +211,17 @@ export function createProviderAccountServices(
   })
   rateLimits.setExternalClaudeDirsResolver(() => {
     const settings = store.getSettings()
-    return resolveExternalClaudeUsageDirs(settings.claudeUsageConfigDirs ?? [], {
-      managedConfigDirs: settings.claudeManagedAccounts.map((account) => account.managedAuthPath),
-      systemConfigDir:
-        getClaudeProfileRouter()?.userConfigDir() ??
-        readUserClaudeConfigDir(process.env) ??
-        join(homedir(), '.claude')
+    return resolveExternalClaudeUsageDirs(
+      settings.claudeUsageConfigDirs ?? [],
+      externalDirExclusions(settings)
+    )
+  })
+  setClaudeConfigDirCandidateProvider(() => {
+    const settings = store.getSettings()
+    return discoverClaudeConfigDirCandidates({
+      ...externalDirExclusions(settings),
+      observed: getClaudeObservedConfigDirs()?.list() ?? [],
+      alreadyTracked: settings.claudeUsageConfigDirs ?? []
     })
   })
   rateLimits.setInactiveCodexAccountsResolver(() => {

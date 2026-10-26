@@ -21460,6 +21460,8 @@
     "claude-usage-config-dirs-empty": "Track Claude usage from other CLAUDE_CONFIG_DIR folders on this device.",
     "claude-usage-config-dir-remove": "Stop tracking this folder",
     "claude-usage-config-dir-add": "Track a folder…",
+    "claude-usage-config-dirs-detected": "Detected on this device",
+    "claude-usage-config-dir-track": "Track",
     "claude-usage-config-dir-hooks": "Show Orca terminal sessions",
     "claude-usage-config-dir-hooks-hint": "Adds Orca hooks to this folder's settings.json so sessions started in Orca terminals show up in workspaces."
   }

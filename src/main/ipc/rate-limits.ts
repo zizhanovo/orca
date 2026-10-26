@@ -2,6 +2,7 @@ import { ipcMain } from 'electron'
 import type { RateLimitService } from '../rate-limits/service'
 import type { RateLimitRuntimeTarget } from '../../shared/rate-limit-types'
 import type { CodexAccountService } from '../codex-accounts/service'
+import { listClaudeConfigDirCandidates } from '../rate-limits/claude-config-dir-candidates'
 
 export function registerRateLimitHandlers(
   rateLimits: RateLimitService,
@@ -22,6 +23,7 @@ export function registerRateLimitHandlers(
   ipcMain.handle('rateLimits:fetchInactiveClaudeAccounts', () =>
     rateLimits.fetchInactiveClaudeAccountsOnOpen()
   )
+  ipcMain.handle('rateLimits:discoverExternalClaudeDirs', () => listClaudeConfigDirCandidates())
   ipcMain.handle('rateLimits:fetchExternalClaudeDirs', () =>
     rateLimits.fetchExternalClaudeDirsOnOpen()
   )

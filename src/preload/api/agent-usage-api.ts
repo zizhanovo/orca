@@ -55,6 +55,7 @@ export type RateLimitsApi = {
   refreshClaudeForTarget: (target: RateLimitRuntimeTarget) => Promise<RateLimitState>
   fetchInactiveClaudeAccounts: () => Promise<void>
   fetchInactiveCodexAccounts: () => Promise<void>
+  discoverExternalClaudeDirs: () => Promise<string[]>
   fetchExternalClaudeDirs: () => Promise<void>
   refreshGrok: () => Promise<RateLimitState>
   onUpdate: (callback: (state: RateLimitState) => void) => () => void
