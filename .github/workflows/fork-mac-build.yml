@@ -22,7 +22,7 @@ jobs:
         with:
           node-version-file: package.json
           cache: pnpm
-      # Both arches' native variants: the builder config pins dmg/zip targets to x64 + arm64.
+      # Keep both arches' native variants: the packaging hooks check them even though only arm64 ships.
       - run: pnpm install --frozen-lockfile --cpu=current,x64,arm64
       # The mobile web bundle resolves React Native/Expo from mobile/'s own install.
       - uses: ./.github/actions/install-mobile-dependencies
@@ -36,7 +36,7 @@ jobs:
           pnpm run ensure:electron-runtime
           export ORCA_BUILD_COMMIT="${GITHUB_SHA:0:12}"
           export ORCA_LOCAL_BUILD_VERSION="$(node -p "const v=require('./package.json').version;v+(v.includes('-')?'.':'-')+'local.'+Date.now()+'.'+process.env.ORCA_BUILD_COMMIT")"
-          pnpm exec electron-builder --config config/electron-builder.config.cjs --mac
+          pnpm exec electron-builder --config config/electron-builder.fork-arm64.config.cjs --mac
       - uses: actions/upload-artifact@v4
         with:
           name: orca-mac-arm64
