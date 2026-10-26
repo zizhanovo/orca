@@ -1,0 +1,33 @@
+name: Fork macOS Build
+
+# Unsigned arm64 build for personal forks. Upstream build workflows are gated to stablyai/orca and
+# need signing secrets; this one runs on GitHub-hosted runners (free for public repos).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.repository != 'stablyai/orca'
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build:mac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: orca-mac-arm64
+          path: |
+            dist/*.dmg
+            dist/*.zip
+          if-no-files-found: error
