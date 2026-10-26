@@ -111,6 +111,16 @@ export class ClaudeHookService {
       : (this.options.hookPlan ?? OPENCLAUDE_MANAGED_HOOK_PLAN)
   }
 
+  private parseErrorStatus(configPath: string): AgentHookInstallStatus {
+    return {
+      agent: this.options.agent,
+      state: 'error',
+      configPath,
+      managedHooksPresent: false,
+      detail: `Could not parse ${this.options.displayName} settings.json`
+    }
+  }
+
   getStatus(options: ClaudeHookTargetOptions = {}): AgentHookInstallStatus {
     const refused = refuseProfileAtDefaultHome(this.options, options.configDir)
     if (refused) {
@@ -120,13 +130,7 @@ export class ClaudeHookService {
     const scriptPath = getManagedScriptPath(this.options.settings)
     const config = readHooksJson(configPath)
     if (!config) {
-      return {
-        agent: this.options.agent,
-        state: 'error',
-        configPath,
-        managedHooksPresent: false,
-        detail: `Could not parse ${this.options.displayName} settings.json`
-      }
+      return this.parseErrorStatus(configPath)
     }
 
     // Count either Windows launcher form: installation falls back to .cmd when the exe cannot be placed.
@@ -190,13 +194,7 @@ export class ClaudeHookService {
     const scriptPath = getManagedScriptPath(this.options.settings)
     const config = readHooksJson(configPath)
     if (!config) {
-      return {
-        agent: this.options.agent,
-        state: 'error',
-        configPath,
-        managedHooksPresent: false,
-        detail: `Could not parse ${this.options.displayName} settings.json`
-      }
+      return this.parseErrorStatus(configPath)
     }
 
     const plan = this.managedHookPlan(options)
@@ -283,17 +281,16 @@ export class ClaudeHookService {
     }
   }
 
-  remove(): AgentHookInstallStatus {
-    const configPath = getConfigPath(this.options.settings)
+  /** With configDir, strips only managed hooks from that non-default dir; user entries stay. */
+  remove(options: { configDir?: string } = {}): AgentHookInstallStatus {
+    const refused = refuseProfileAtDefaultHome(this.options, options.configDir)
+    if (refused) {
+      return refused
+    }
+    const configPath = getConfigPath(this.options.settings, options.configDir)
     const config = readHooksJson(configPath)
     if (!config) {
-      return {
-        agent: this.options.agent,
-        state: 'error',
-        configPath,
-        managedHooksPresent: false,
-        detail: `Could not parse ${this.options.displayName} settings.json`
-      }
+      return this.parseErrorStatus(configPath)
     }
     const { config: hooksRemoved, changed: hooksChanged } = removeManagedHooks(
       config,
@@ -305,6 +302,9 @@ export class ClaudeHookService {
     )
     if (hooksChanged || statusLineChanged) {
       writeHooksJson(configPath, nextConfig)
+    }
+    if (options.configDir !== undefined) {
+      return this.getStatus(options)
     }
     if (this.options.agent === 'claude') {
       for (const configDir of [

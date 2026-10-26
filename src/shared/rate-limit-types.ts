@@ -197,4 +197,6 @@ export type RateLimitState = {
   codexTarget: RateLimitRuntimeTarget
   inactiveClaudeAccounts: InactiveAccountUsage[]
   inactiveCodexAccounts: InactiveAccountUsage[]
+  /** External CLAUDE_CONFIG_DIR partitions tracked read-only; accountId holds the absolute dir path. */
+  externalClaudeDirs: InactiveAccountUsage[]
 }

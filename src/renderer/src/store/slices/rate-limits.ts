@@ -13,6 +13,7 @@ export type RateLimitSlice = {
   consumeCodexRateLimitResetCredit: () => Promise<void>
   fetchInactiveClaudeAccountUsage: () => Promise<void>
   fetchInactiveCodexAccountUsage: () => Promise<void>
+  fetchExternalClaudeDirUsage: () => Promise<void>
   setRateLimitsFromPush: (state: RateLimitState) => void
 }
 
@@ -129,6 +130,14 @@ export const createRateLimitSlice: StateCreator<AppState, [], [], RateLimitSlice
       await window.api.rateLimits.fetchInactiveCodexAccounts()
     } catch (error) {
       console.error('Failed to fetch inactive Codex account usage:', error)
+    }
+  },
+
+  fetchExternalClaudeDirUsage: async () => {
+    try {
+      await window.api.rateLimits.fetchExternalClaudeDirs()
+    } catch (error) {
+      console.error('Failed to fetch external Claude dir usage:', error)
     }
   },
 

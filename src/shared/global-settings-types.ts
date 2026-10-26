@@ -1,6 +1,7 @@
 import type { TelemetrySettings } from './telemetry-settings-types'
 import type { BrowserProfileScope } from './browser-profile-scope'
 import type { GlobalSettingsBase } from './global-settings-base'
+import type { ClaudeExternalConfigDirSettings } from './claude-external-config-dir-settings'
 import type { ExecutionHostId } from './execution-host'
 import type { OrcaWorkspaceLayout } from './orca-workspace-layout'
 import type { GitHubProjectSettings } from './github/project-types'
@@ -493,7 +494,7 @@ export type GlobalSettings = GlobalSettingsBase & {
   voice?: VoiceSettings
   /** Transcript full-text search consent + retention. Absent means off; nothing indexes until the user opts in. */
   aiVaultSearch?: AiVaultSearchSettings
-}
+} & ClaudeExternalConfigDirSettings
 
 // Retain one import entry point while keeping feature shapes separate from the max-lines-limited settings module.
 export type { GhosttyImportPreview } from './ghostty-import-preview'

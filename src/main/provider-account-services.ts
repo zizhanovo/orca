@@ -1,7 +1,17 @@
 // Keep Electron imports out: both desktop and orcad bundle these account services.
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 import { getClaudeAgentViewService } from './claude/agent-view-service'
 import type { Store } from './persistence'
 import { RateLimitService } from './rate-limits/service'
+import { resolveExternalClaudeUsageDirs } from './rate-limits/claude-external-config-dir-usage'
+import {
+  resolveHookConfigDirs,
+  syncExternalClaudeDirHooks
+} from './claude/external-config-dir-hooks'
+import type { GlobalSettings } from '../shared/global-settings-types'
+import { getClaudeProfileRouter } from './claude-accounts/claude-profile-installed-router'
+import { readUserClaudeConfigDir } from './claude-accounts/claude-profile-paths'
 import { CodexRuntimeHomeService } from './codex-accounts/runtime-home-service'
 import { CodexAccountService } from './codex-accounts/service'
 import { ClaudeRuntimeAuthService } from './claude-accounts/runtime-auth-service'
@@ -60,6 +70,33 @@ export function createProviderAccountServices(
     rateLimits,
     store.getSettings()
   )
+  const hookDirsFor = (settings: GlobalSettings): string[] =>
+    resolveHookConfigDirs(
+      settings.claudeUsageConfigDirs ?? [],
+      settings.claudeHookConfigDirs ?? [],
+      {
+        managedConfigDirs: settings.claudeManagedAccounts.map((account) => account.managedAuthPath),
+        systemConfigDir:
+          getClaudeProfileRouter()?.userConfigDir() ??
+          readUserClaudeConfigDir(process.env) ??
+          join(homedir(), '.claude')
+      }
+    )
+  let syncedHookDirs: string[] = []
+  const syncHookDirs = (settings: GlobalSettings): void => {
+    const next = hookDirsFor(settings)
+    try {
+      for (const { dir, status } of syncExternalClaudeDirHooks(syncedHookDirs, next)) {
+        if (status.state === 'error') {
+          console.warn(`[agent-hooks] Claude hooks for ${dir}: ${status.detail ?? status.state}`)
+        }
+      }
+    } catch (error) {
+      console.warn('[agent-hooks] Failed to sync Claude hooks for external config dirs:', error)
+    }
+    syncedHookDirs = next
+  }
+  syncHookDirs(store.getSettings())
   store.onSettingsChanged((updates, settings) => {
     void agentView.reconcile(settings)
     // Auto runtime selection remains live as provider settings change.
@@ -95,6 +132,17 @@ export function createProviderAccountServices(
       void rateLimits.refresh().catch((error: unknown) => {
         console.warn(
           '[rate-limits] Failed to refresh GLM Coding Plan usage after a settings change:',
+          error
+        )
+      })
+    }
+    if ('claudeUsageConfigDirs' in updates || 'claudeHookConfigDirs' in updates) {
+      syncHookDirs(settings)
+    }
+    if ('claudeUsageConfigDirs' in updates) {
+      void rateLimits.refreshExternalClaudeDirs().catch((error: unknown) => {
+        console.warn(
+          '[rate-limits] Failed to refresh external Claude dir usage after a settings change:',
           error
         )
       })
@@ -151,6 +199,16 @@ export function createProviderAccountServices(
         wslDistro: account.wslDistro,
         wslLinuxAuthPath: account.wslLinuxAuthPath
       }))
+  })
+  rateLimits.setExternalClaudeDirsResolver(() => {
+    const settings = store.getSettings()
+    return resolveExternalClaudeUsageDirs(settings.claudeUsageConfigDirs ?? [], {
+      managedConfigDirs: settings.claudeManagedAccounts.map((account) => account.managedAuthPath),
+      systemConfigDir:
+        getClaudeProfileRouter()?.userConfigDir() ??
+        readUserClaudeConfigDir(process.env) ??
+        join(homedir(), '.claude')
+    })
   })
   rateLimits.setInactiveCodexAccountsResolver(() => {
     const settings = store.getSettings()

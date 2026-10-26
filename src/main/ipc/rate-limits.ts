@@ -22,6 +22,9 @@ export function registerRateLimitHandlers(
   ipcMain.handle('rateLimits:fetchInactiveClaudeAccounts', () =>
     rateLimits.fetchInactiveClaudeAccountsOnOpen()
   )
+  ipcMain.handle('rateLimits:fetchExternalClaudeDirs', () =>
+    rateLimits.fetchExternalClaudeDirsOnOpen()
+  )
   ipcMain.handle('rateLimits:fetchInactiveCodexAccounts', () =>
     rateLimits.fetchInactiveCodexAccountsOnOpen()
   )

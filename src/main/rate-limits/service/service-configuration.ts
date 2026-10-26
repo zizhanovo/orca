@@ -16,6 +16,7 @@ import {
   type GeminiCliOAuthEnabledResolver,
   type InactiveCodexAccountInfo,
   type InactiveClaudeAccountInfo,
+  type ExternalClaudeDirsResolver,
   type RateLimitState,
   normalizeCodexAccountSelectionTarget,
   normalizeClaudeAccountSelectionTarget,
@@ -76,6 +77,11 @@ export abstract class RateLimitServiceConfiguration extends RateLimitServiceAcco
     this.inactiveClaudeAccountsGeneration += 1
   }
 
+  setExternalClaudeDirsResolver(resolver: ExternalClaudeDirsResolver): void {
+    this.externalClaudeDirsResolver = resolver
+    this.externalClaudeDirsGeneration += 1
+  }
+
   setInactiveCodexAccountsResolver(resolver: () => InactiveCodexAccountInfo[]): void {
     this.inactiveCodexAccountsResolver = resolver
     this.inactiveCodexAccountsGeneration += 1
@@ -124,6 +130,7 @@ export abstract class RateLimitServiceConfiguration extends RateLimitServiceAcco
     this.clearQueuedFetches()
     this.inactiveClaudeFetching.clear()
     this.inactiveCodexFetching.clear()
+    this.externalClaudeDirFetching.clear()
     this.resolveAndClearFetchIdleWaiters()
     this.stopTimer()
     this.clearDeferredStartupRefresh()
@@ -135,6 +142,7 @@ export abstract class RateLimitServiceConfiguration extends RateLimitServiceAcco
   getState(): RateLimitState {
     this.pruneInactiveClaudeState()
     this.pruneInactiveCodexState()
+    this.pruneExternalClaudeDirState()
     return {
       ...this.state,
       // Filesystem-stored cookie presence keeps MiniMax visible across renderer reloads.
@@ -153,6 +161,10 @@ export abstract class RateLimitServiceConfiguration extends RateLimitServiceAcco
       inactiveCodexAccounts: this.buildInactiveArray(
         this.inactiveCodexCache,
         this.inactiveCodexFetching
+      ),
+      externalClaudeDirs: this.buildInactiveArray(
+        this.externalClaudeDirCache,
+        this.externalClaudeDirFetching
       )
     }
   }

@@ -202,6 +202,8 @@ export const SETTINGS_KEYS_NAMING_A_PATH = {
   devPluginPaths: 'Desktop plugin paths.',
   agentStateRulesPath: 'Desktop file.',
   androidSdkPath: 'Desktop SDK.',
+  claudeUsageConfigDirs: 'Desktop Claude config folders tracked read-only for usage.',
+  claudeHookConfigDirs: 'Desktop Claude config folders opted into Orca-managed hooks.',
   codexSessionSourceHome:
     "Per-distro Codex history home; the host's own history scan needs it (Track E), the mover does not."
 } as const satisfies Partial<Record<keyof GlobalSettings, string>>

@@ -102,6 +102,8 @@ vi.mock('../../store', () => {
     recordFeatureInteraction: vi.fn(),
     refreshClaudeRateLimitsForTarget: vi.fn(),
     fetchInactiveClaudeAccountUsage: vi.fn(),
+    fetchExternalClaudeDirUsage: vi.fn(),
+    updateSettings: vi.fn(),
     rateLimits: { inactiveClaudeAccounts, claudeTarget: { runtime: 'host', wslDistro: null } }
   })
   const useAppStore = (selector: (value: Record<string, unknown>) => unknown): unknown =>

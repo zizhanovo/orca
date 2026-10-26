@@ -155,6 +155,8 @@ export function createRateLimitsApi(): NonNullable<Partial<PreloadApi>['rateLimi
     refreshClaudeForTarget: refresh,
     fetchInactiveClaudeAccounts: refreshInactive,
     fetchInactiveCodexAccounts: refreshInactive,
+    // Why: the server host owns the config dirs; its snapshot already carries their usage.
+    fetchExternalClaudeDirs: refreshInactive,
     refreshGrok: refresh,
     onUpdate: (callback) => {
       listeners.add(callback)

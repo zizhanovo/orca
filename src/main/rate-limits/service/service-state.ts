@@ -19,6 +19,7 @@ import {
   type NormalizedCodexAccountSelectionTarget,
   type NormalizedClaudeAccountSelectionTarget,
   type InactiveClaudeAccountInfo,
+  type ExternalClaudeDirsResolver,
   type NetworkProxySettings,
   DEFAULT_POLL_MS
 } from './service-types'
@@ -111,16 +112,21 @@ export abstract class RateLimitServiceState {
   protected antigravityUsageEnabledResolver: AntigravityUsageEnabledResolver | null = null
   protected inactiveClaudeAccountsResolver: (() => InactiveClaudeAccountInfo[]) | null = null
   protected inactiveCodexAccountsResolver: (() => InactiveCodexAccountInfo[]) | null = null
+  protected externalClaudeDirsResolver: ExternalClaudeDirsResolver | null = null
   protected networkProxySettingsResolver: (() => NetworkProxySettings) | null = null
   protected inactiveClaudeCache = new Map<string, ProviderRateLimits>()
   protected inactiveCodexCache = new Map<string, ProviderRateLimits>()
+  protected externalClaudeDirCache = new Map<string, ProviderRateLimits>()
   protected inactiveClaudeFetching = new Set<string>()
   protected inactiveCodexFetching = new Set<string>()
+  protected externalClaudeDirFetching = new Set<string>()
   protected inactiveCodexFetchInFlight = false
   protected lastInactiveClaudeFetchAt = 0
   protected inactiveClaudeAccountsGeneration = 0
   protected lastInactiveCodexFetchAt = 0
   protected inactiveCodexAccountsGeneration = 0
+  protected lastExternalClaudeDirFetchAt = 0
+  protected externalClaudeDirsGeneration = 0
   protected stateListeners = new Set<(state: RateLimitState) => void>()
 
   constructor() {}

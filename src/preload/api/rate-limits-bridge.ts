@@ -19,6 +19,8 @@ export const rateLimitsApi = {
     ipcRenderer.invoke('rateLimits:fetchInactiveClaudeAccounts'),
   fetchInactiveCodexAccounts: (): Promise<void> =>
     ipcRenderer.invoke('rateLimits:fetchInactiveCodexAccounts'),
+  fetchExternalClaudeDirs: (): Promise<void> =>
+    ipcRenderer.invoke('rateLimits:fetchExternalClaudeDirs'),
   refreshGrok: (): Promise<RateLimitState> => ipcRenderer.invoke('rateLimits:refreshGrok'),
   onUpdate: (callback: (state: RateLimitState) => void): (() => void) => {
     const listener = (_event: Electron.IpcRendererEvent, state: RateLimitState) => callback(state)

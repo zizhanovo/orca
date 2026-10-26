@@ -34,6 +34,9 @@ export type InactiveCodexAccountInfo = {
   resolveHome: () => { kind: 'ready'; managedHomePath: string } | { kind: 'skip' }
 }
 
+/** Absolute host paths of external CLAUDE_CONFIG_DIR partitions tracked for usage. */
+export type ExternalClaudeDirsResolver = () => string[]
+
 export type CodexHomePathResolver = (
   target?: CodexAccountSelectionTarget
 ) => CodexRateLimitHomeResolution | Promise<CodexRateLimitHomeResolution>
