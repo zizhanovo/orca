@@ -1,7 +1,7 @@
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resolveHookConfigDirs, syncExternalClaudeDirHooks } from './external-config-dir-hooks'
 import { ClaudeHookService } from './hook-service'
 
@@ -14,8 +14,21 @@ describe('resolveHookConfigDirs', () => {
 })
 
 describe('syncExternalClaudeDirHooks', () => {
+  const tmpDirs: string[] = []
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    for (const dir of tmpDirs.splice(0)) {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
   it('installs into opted-in dirs, preserves user hooks, and removes only managed ones', () => {
+    // Managed scripts land under $HOME/.orca; never let the test touch the real home.
+    const tmpHome = mkdtempSync(join(tmpdir(), 'orca-claude-home-'))
+    vi.stubEnv('HOME', tmpHome)
+    vi.stubEnv('USERPROFILE', tmpHome)
     const dir = mkdtempSync(join(tmpdir(), 'orca-claude-ext-'))
+    tmpDirs.push(tmpHome, dir)
     const settings = join(dir, 'settings.json')
     const user = { hooks: { Stop: [{ hooks: [{ type: 'command', command: 'echo mine' }] }] } }
     writeFileSync(settings, JSON.stringify({ model: 'x', ...user }))
