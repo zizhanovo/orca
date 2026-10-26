@@ -15,6 +15,7 @@ import {
 import { barColor, formatResetCountdown, getWindowSections, ProviderIcon } from './tooltip'
 import { getProviderDisplayName } from './usage-error-copy'
 import { formatPlanLabel, usageTextColorClass } from './usage-roster-formatting'
+import { ExternalClaudeDirsSection } from './ExternalClaudeDirsSection'
 import { getUsageRosterRowState, type UsageRosterRowState } from './usage-roster-row-state'
 import type { StatusBarUsageMode } from '../../../../shared/status-bar-usage-mode'
 
@@ -328,6 +329,8 @@ export function UsageRosterPanel({
           </DropdownMenuItem>
         )
       })}
+      {/* Claude config folders the user tracks (e.g. c3/c5/c9); renders nothing for remote owners. */}
+      <ExternalClaudeDirsSection />
       <div className="border-t border-border/70" />
       <DropdownMenuItem
         onSelect={onUsageDetails}

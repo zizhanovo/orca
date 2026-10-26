@@ -1,9 +1,12 @@
 import { FolderPlus, X } from 'lucide-react'
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Switch } from '@/components/ui/switch'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '../../store'
+import { defaultScopeHost } from '@/lib/default-creation-host'
+import { useActiveAccountOwner } from '@/runtime/use-worktree-runtime-target'
+import { runtimeTargetEnvironmentId } from '@/runtime/runtime-client-target'
 import {
   InlineUsageBars,
   InlineUsageSkeleton,
@@ -18,12 +21,24 @@ function dirLabel(dir: string): string {
 }
 
 /** Read-only usage for user-picked CLAUDE_CONFIG_DIR folders (host-local only). */
-export function ExternalClaudeDirsSection(): React.JSX.Element {
+export function ExternalClaudeDirsSection(): React.JSX.Element | null {
+  const settings = useAppStore((s) => s.settings)
+  const { target: runtimeTarget } = useActiveAccountOwner(defaultScopeHost(settings))
+  // Why: the folders are paths on this device, so a remote-owned account has nothing to show.
+  const isLocalOwner = runtimeTargetEnvironmentId(runtimeTarget) === null
+  const fetchExternalClaudeDirUsage = useAppStore((s) => s.fetchExternalClaudeDirUsage)
   const updateSettings = useAppStore((s) => s.updateSettings)
   // Older paired hosts publish snapshots without the field; tolerate absence.
   const externalClaudeDirs = useAppStore((s) => s.rateLimits.externalClaudeDirs) ?? NO_DIRS
   const usageConfigDirs = useAppStore((s) => s.settings?.claudeUsageConfigDirs) ?? NO_DIRS
   const hookConfigDirs = useAppStore((s) => s.settings?.claudeHookConfigDirs) ?? NO_DIRS
+
+  // Why: mounting means the usage popover just opened; main debounces repeat fetches.
+  useEffect(() => {
+    if (isLocalOwner) {
+      void fetchExternalClaudeDirUsage()
+    }
+  }, [isLocalOwner, fetchExternalClaudeDirUsage])
 
   const addUsageConfigDir = useCallback(async () => {
     const dir = await window.api.repos.pickDirectory()
@@ -52,6 +67,10 @@ export function ExternalClaudeDirsSection(): React.JSX.Element {
     },
     [hookConfigDirs, updateSettings]
   )
+
+  if (!isLocalOwner) {
+    return null
+  }
 
   return (
     <div className="px-1 pb-1">

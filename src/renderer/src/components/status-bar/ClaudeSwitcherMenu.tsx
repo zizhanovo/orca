@@ -45,7 +45,6 @@ import {
   isUnavailableInactiveUsage
 } from './InlineProviderUsage'
 import { ProviderDetailsMenu } from './ProviderDetailsMenu'
-import { ExternalClaudeDirsSection } from './ExternalClaudeDirsSection'
 import { getClaudeAccountSyncKey } from './provider-account-sync-key'
 import { signInToClaudeAccount } from '@/lib/claude-account-sign-in'
 
@@ -80,7 +79,6 @@ export function ClaudeSwitcherMenu({
   const recordFeatureInteraction = useAppStore((s) => s.recordFeatureInteraction)
   const refreshClaudeRateLimitsForTarget = useAppStore((s) => s.refreshClaudeRateLimitsForTarget)
   const fetchInactiveClaudeAccountUsage = useAppStore((s) => s.fetchInactiveClaudeAccountUsage)
-  const fetchExternalClaudeDirUsage = useAppStore((s) => s.fetchExternalClaudeDirUsage)
   const inactiveClaudeAccounts = useAppStore((s) => s.rateLimits.inactiveClaudeAccounts)
   const claudeTarget = useAppStore((s) => s.rateLimits.claudeTarget)
   const settings = useAppStore((s) => s.settings)
@@ -146,21 +144,12 @@ export function ClaudeSwitcherMenu({
           void fetchInactiveClaudeAccountUsage()
         }
       }
-      if (!hasActiveRuntimeEnvironment) {
-        void fetchExternalClaudeDirUsage()
-      }
       // Why reload: the login each account folder holds changes without a settings change.
       void loadAccounts().catch((error) => {
         console.error('Failed to load Claude accounts for status bar:', error)
       })
     },
-    [
-      accounts.accounts,
-      fetchExternalClaudeDirUsage,
-      fetchInactiveClaudeAccountUsage,
-      hasActiveRuntimeEnvironment,
-      loadAccounts
-    ]
+    [accounts.accounts, fetchInactiveClaudeAccountUsage, hasActiveRuntimeEnvironment, loadAccounts]
   )
 
   // Why: fetch inactive-account usage only on switcher expansion; remote-owned accounts have no local cache to fill.
@@ -397,7 +386,6 @@ export function ClaudeSwitcherMenu({
           </div>
         </div>
       ) : null}
-      {!hasActiveRuntimeEnvironment ? <ExternalClaudeDirsSection /> : null}
       <DropdownMenuSeparator />
       <DropdownMenuItem
         onSelect={() => {
