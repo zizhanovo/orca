@@ -25,7 +25,11 @@ export function InlineUsageBars({
     useAppStore((state) => state.usagePercentageDisplay)
   )
   // Why: tick the session countdown live via one boundary-scheduled clock, not just the usage poll (#5399).
-  const now = useResetCountdownClock([limits.session?.resetsAt, limits.monthly?.resetsAt])
+  const now = useResetCountdownClock([
+    limits.session?.resetsAt,
+    limits.weekly?.resetsAt,
+    limits.monthly?.resetsAt
+  ])
   const usageWindows = [
     limits.session
       ? {
@@ -39,7 +43,12 @@ export function InlineUsageBars({
       ? {
           key: 'weekly',
           used: clampUsedPercent(limits.weekly.usedPercent),
-          label: translate('auto.components.status.bar.StatusBar.5c938d39ac', 'wk')
+          // Why: the 7-day window's time left is what decides whether to switch folders, so show it beside the marker.
+          label: `${translate('auto.components.status.bar.StatusBar.5c938d39ac', 'wk')}${
+            limits.weekly.resetsAt != null
+              ? ` ${formatRateLimitWindowChipLabel(limits.weekly, now)}`
+              : ''
+          }`
         }
       : null,
     limits.fableWeekly

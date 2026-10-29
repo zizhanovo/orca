@@ -2,6 +2,7 @@ import type {
   AgentSessionLaunchPlan,
   AgentSessionLaunchRequest
 } from '@/lib/agent-session-launch-plan'
+import { launchEnvWithClaudeDir } from '@/components/agent-session-continuation/claude-continuation-config-dirs'
 import { useAppStore } from '@/store'
 import type { AgentStartupPlan } from '@/lib/tui-agent-startup'
 import { planLaunchAgentStartupPrompt } from '@/lib/launch-agent-startup-prompt-plan'
@@ -16,10 +17,7 @@ import {
 import { runtimeEnvironmentIdOrLocalUnlessTwin } from '@/lib/worktree-runtime-owner'
 import { isWebRuntimeSessionActive } from '@/runtime/web-runtime-session-environment'
 import { launchAgentInWebHostTab } from '@/lib/launch-agent-web-host-tab'
-import {
-  resolveTuiAgentLaunchArgs,
-  resolveTuiAgentLaunchEnv
-} from '../../../shared/tui-agent-launch-defaults'
+import { resolveTuiAgentLaunchArgs } from '../../../shared/tui-agent-launch-defaults'
 import { TUI_AGENT_CONFIG } from '../../../shared/tui-agent-config'
 import type { TuiAgent } from '../../../shared/tui-agent'
 import type { LaunchSource } from '../../../shared/telemetry-events'
@@ -58,6 +56,8 @@ export type LaunchAgentInNewTabArgs = LaunchAgentInNewTabRequest & {
   /** Optional CLI arguments appended to the selected agent command. */
   agentArgs?: string | null
   initialCwd?: string | null
+  /** Runs this Claude launch against another CLAUDE_CONFIG_DIR folder; ignored for other agents. */
+  claudeConfigDir?: string | null
   /** How to deliver the prompt: `draft` leaves it editable, `submit-after-ready` sends it once the TUI is ready. */
   promptDelivery?: 'auto-submit' | 'draft' | 'submit-after-ready'
   /** Telemetry surface that initiated this launch. Defaults to the tab-bar quick-launch entry point. */
@@ -134,7 +134,7 @@ function launchAgentInNewTabInternal(args: LaunchAgentInNewTabArgs): LaunchAgent
   const { resolvedLaunchPlatform, isRemote, queuedShell } = executionContext
   const effectiveAgentArgs =
     agentArgs !== undefined ? agentArgs : resolveTuiAgentLaunchArgs(agent, store.settings)
-  const agentEnv = resolveTuiAgentLaunchEnv(agent, store.settings, resolvedLaunchPlatform)
+  const agentEnv = launchEnvWithClaudeDir(agent, store.settings, resolvedLaunchPlatform, args)
   const trimmedPrompt = prompt?.trim() ?? ''
   const hasPrompt = trimmedPrompt.length > 0
   const isFollowupPath = TUI_AGENT_CONFIG[agent].promptInjectionMode === 'stdin-after-start'

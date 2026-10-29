@@ -35,6 +35,10 @@ import { useAppStore } from '@/store'
 import { isTuiAgentEnabled } from '../../../../shared/tui-agent-selection'
 import type { TuiAgent } from '../../../../shared/tui-agent'
 import { chooseInitialContinuationAgent } from './agent-session-continuation-selection'
+import {
+  buildClaudeContinuationFolderOptions,
+  isClaudeFamilyAgent
+} from './claude-continuation-config-dirs'
 
 type AgentSessionContinuationDialogProps = {
   open: boolean
@@ -45,6 +49,8 @@ type AgentSessionContinuationDialogProps = {
 }
 
 const EMPTY_DISABLED_AGENTS: TuiAgent[] = []
+const NO_DIRS: string[] = []
+const DEFAULT_FOLDER_VALUE = '__orca-default__'
 
 export function AgentSessionContinuationDialog({
   open,
@@ -74,6 +80,13 @@ export function AgentSessionContinuationDialog({
     }
   }
   const contextMode = contextPick?.request === request ? contextPick.mode : 'focused'
+  const [folderPick, setFolderPick] = useState<{
+    request: AgentSessionContinuationRequest | null
+    dir: string | null
+  } | null>(null)
+  if (!open && folderPick) {
+    setFolderPick(null)
+  }
   const [starting, setStarting] = useState(false)
   const [showStarting, setShowStarting] = useState(false)
   const disabledAgents = settings?.disabledTuiAgents ?? EMPTY_DISABLED_AGENTS
@@ -116,6 +129,24 @@ export function AgentSessionContinuationDialog({
     })
   const selection = observation.selectionFor(selectedAgent, currentPick?.surface)
 
+  // Why: Claude folders are paths on this device, and each is a separate account; the choice must be explicit and visible.
+  const trackedDirs = settings?.claudeUsageConfigDirs ?? NO_DIRS
+  const folderOptions =
+    request && detectionTarget?.kind === 'local' && isClaudeFamilyAgent(selectedAgent)
+      ? buildClaudeContinuationFolderOptions({
+          sourceAgent: request.source.sourceAgent,
+          transcriptPath: request.source.transcriptPath,
+          trackedDirs
+        })
+      : []
+  const showFolderPicker = folderOptions.length > 1
+  const pickedDir = folderPick?.request === request ? folderPick.dir : undefined
+  const claudeConfigDir = showFolderPicker
+    ? pickedDir !== undefined && folderOptions.some((option) => option.dir === pickedDir)
+      ? pickedDir
+      : (folderOptions[0]?.dir ?? null)
+    : null
+
   useEffect(() => {
     if (!starting) {
       setShowStarting(false)
@@ -141,6 +172,7 @@ export function AgentSessionContinuationDialog({
       worktreeId: request.worktreeId,
       groupId: request.groupId,
       initialCwd: request.initialCwd,
+      claudeConfigDir,
       launchChoice: selection.choice,
       launchSource: request.launchSource,
       signal: abortRef.current?.signal
@@ -245,6 +277,58 @@ export function AgentSessionContinuationDialog({
               </p>
             ) : null}
           </div>
+
+          {showFolderPicker ? (
+            <div className="min-w-0 space-y-1.5">
+              <label className="text-xs font-medium">
+                {translate(
+                  'components.agentSessionContinuation.claudeFolder',
+                  'Claude account folder'
+                )}
+              </label>
+              <Select
+                value={claudeConfigDir ?? DEFAULT_FOLDER_VALUE}
+                onValueChange={(value) =>
+                  setFolderPick({
+                    request,
+                    dir: value === DEFAULT_FOLDER_VALUE ? null : value
+                  })
+                }
+              >
+                <SelectTrigger className="min-w-0 w-full" size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {folderOptions.map((option) => (
+                    <SelectItem
+                      key={option.dir ?? DEFAULT_FOLDER_VALUE}
+                      value={option.dir ?? DEFAULT_FOLDER_VALUE}
+                    >
+                      {option.dir
+                        ? option.isSource
+                          ? translate(
+                              'components.agentSessionContinuation.claudeFolderSource',
+                              '{{name}} (same as original session)',
+                              { name: option.name }
+                            )
+                          : option.name
+                        : translate(
+                            'components.agentSessionContinuation.claudeFolderDefault',
+                            'Orca current account'
+                          )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="break-all font-mono text-[11px] leading-4 text-muted-foreground">
+                {claudeConfigDir ??
+                  translate(
+                    'components.agentSessionContinuation.claudeFolderDefaultHint',
+                    'Uses the account selected in Orca.'
+                  )}
+              </p>
+            </div>
+          ) : null}
 
           <div className="min-w-0 space-y-1.5">
             <label className="text-xs font-medium">

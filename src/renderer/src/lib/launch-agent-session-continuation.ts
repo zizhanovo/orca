@@ -27,6 +27,7 @@ type LaunchAgentSessionContinuationArgs = {
   worktreeId: string
   groupId?: string | null
   initialCwd?: string | null
+  claudeConfigDir?: string | null
   launchChoice?: AgentLaunchChoice
   launchSource: LaunchSource
   signal?: AbortSignal
@@ -96,6 +97,7 @@ export async function launchAgentSessionContinuation({
   worktreeId,
   groupId,
   initialCwd,
+  claudeConfigDir,
   launchChoice,
   launchSource,
   signal
@@ -111,6 +113,7 @@ export async function launchAgentSessionContinuation({
     promptDelivery: agent === 'claude' ? ('draft' as const) : ('submit-after-ready' as const),
     launchSource,
     ...(initialCwd ? { initialCwd } : {}),
+    ...(claudeConfigDir ? { claudeConfigDir } : {}),
     onPromptDeliveryUnconfirmed: () => {
       deliveryUnconfirmed = true
     },

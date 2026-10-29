@@ -27,6 +27,7 @@ import { ClaudeSwitcherMenu } from './ClaudeSwitcherMenu'
 import { CodexSwitcherMenu } from './CodexSwitcherMenu'
 import { ProviderDetailsMenu } from './ProviderDetailsMenu'
 import { CLOSE_ALL_CONTEXT_MENUS_EVENT } from '@/lib/close-all-context-menus'
+import { ExternalClaudeDirsStatusChips } from './ExternalClaudeDirsStatusChips'
 import { ProviderSegment, UsageOverflowChip, getUsageTone } from './StatusBarProviderSegment'
 import {
   UsageUnitLabel,
@@ -282,6 +283,7 @@ export function StatusBarSurface({
             </Tooltip>
           )}
         </div>
+        <ExternalClaudeDirsStatusChips />
       </div>
 
       {/* Why: attention segments never clip; below the tightest density they scroll rather than vanish. */}

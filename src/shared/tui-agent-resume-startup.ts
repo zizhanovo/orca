@@ -101,8 +101,37 @@ export function buildAgentResumeStartupPlan(args: {
     launchConfig,
     ...(args.agent === 'codex' ? { startupCommandDelivery: 'shell-ready' as const } : {}),
     ...(Object.keys(applied).length > 0 ? { sessionOptions: { ...applied } } : {}),
-    ...(args.agentEnv ? { env: { ...args.agentEnv } } : {})
+    ...resumeEnv(args)
   }
+}
+
+/** Claude writes `<config>/projects/<encoded-cwd>/<id>.jsonl`; resume must look in the folder that holds it, not the default one. */
+export function claudeConfigDirFromTranscript(transcriptPath: string | undefined): string | null {
+  if (!transcriptPath) {
+    return null
+  }
+  const parts = transcriptPath.split(/[\\/]/)
+  if (parts.length < 4 || parts.at(-3) !== 'projects') {
+    return null
+  }
+  // Each separator is one character, so the config folder is everything before "/projects/<cwd>/<file>".
+  const tail = parts.slice(-3).join('/').length + 1
+  return transcriptPath.slice(0, transcriptPath.length - tail) || null
+}
+
+function resumeEnv(args: {
+  agent: ResumableTuiAgent
+  providerSession: AgentProviderSessionMetadata
+  agentEnv?: Record<string, string> | null
+}): { env: Record<string, string> } | Record<string, never> {
+  const configDir =
+    args.agent === 'claude' && !args.agentEnv?.CLAUDE_CONFIG_DIR
+      ? claudeConfigDirFromTranscript(args.providerSession.transcriptPath)
+      : null
+  if (!args.agentEnv && !configDir) {
+    return {}
+  }
+  return { env: { ...args.agentEnv, ...(configDir ? { CLAUDE_CONFIG_DIR: configDir } : {}) } }
 }
 
 /** WSL panes start at a UNC path while the agent reports its Linux path. */

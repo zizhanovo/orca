@@ -20216,6 +20216,10 @@
       "sent": "Session context sent to {{agent}} in a new session.",
       "deliveryFailed": "The new {{agent}} session started, but its context could not be sent.",
       "deliveryUnconfirmed": "Orca could not confirm {{agent}} received the session context. Check the new session, and paste it yourself if its input is empty.",
+      "claudeFolder": "Claude account folder",
+      "claudeFolderSource": "{{name}} (same as original session)",
+      "claudeFolderDefault": "Orca current account",
+      "claudeFolderDefaultHint": "Uses the account selected in Orca.",
       "copyPrompt": "Copy prompt",
       "launchFailed": "Could not start a new {{agent}} session."
     },

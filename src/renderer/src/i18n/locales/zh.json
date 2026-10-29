@@ -19789,6 +19789,10 @@
       "deliveryFailed": "新的 {{agent}} 会话已启动，但无法发送上下文。",
       "launchFailed": "无法启动新的 {{agent}} 会话。",
       "deliveryUnconfirmed": "Orca 无法确认 {{agent}} 已收到会话上下文。请检查新会话，如果其输入为空，请自行粘贴。",
+      "claudeFolder": "Claude 账号文件夹",
+      "claudeFolderSource": "{{name}}（与原会话相同）",
+      "claudeFolderDefault": "Orca 当前账号",
+      "claudeFolderDefaultHint": "使用 Orca 中选中的账号。",
       "copyPrompt": "复制提示"
     },
     "terminalPane": {
