@@ -31,6 +31,7 @@ import { readMiniMaxSessionCookie } from './minimax/minimax-cookie-store'
 import { readMiniMaxApiKey } from './minimax/minimax-api-key-store'
 import { readZcodePlanApiKey } from './zcode/zcode-plan-api-key-store'
 import { readOpenCodeGoApiKey } from './opencode/opencode-go-api-key-store'
+import { setAntigravityNativeCredentialChangeListener } from './antigravity/native-account-host'
 import { createAccountRuntimeTargetSettingsSync } from './rate-limits/account-runtime-target-sync'
 import { normalizeCodexRuntimeSelection } from './codex-accounts/runtime-selection'
 import { normalizeClaudeRuntimeSelection } from './claude-accounts/runtime-selection'
@@ -190,6 +191,9 @@ export function createProviderAccountServices(
   // Reuse the meter switch so hidden Antigravity usage does not spawn agy.
   rateLimits.setAntigravityUsageEnabledResolver(() =>
     store.getUI().statusBarItems.includes('antigravity')
+  )
+  setAntigravityNativeCredentialChangeListener(() =>
+    rateLimits.invalidateAntigravityCredentialState()
   )
   rateLimits.setNetworkProxySettingsResolver(() => store.getSettings())
   rateLimits.setInactiveClaudeAccountsResolver(() => {
