@@ -41,6 +41,10 @@ type LinkTestSettings = {
 const noSettings = (): LinkTestSettings | undefined => undefined
 const terminalView = (): 'terminal' | 'activity' => 'terminal'
 
+const repos: { id: string; displayName: string; repoIcon?: null; badgeColor?: string }[] = []
+
+const projects: { id: string; displayName: string; repoIcon?: null; badgeColor?: string }[] = []
+
 const storeState = {
   settings: noSettings(),
   setActiveWorktree: setActiveWorktreeMock,
@@ -48,8 +52,8 @@ const storeState = {
   setActiveView: setActiveViewMock,
   ...noActiveWorkspace(),
   createBrowserTab: createBrowserTabMock,
-  repos: [] as { id: string; displayName: string; repoIcon?: null; badgeColor?: string }[],
-  projects: [] as { id: string; displayName: string; repoIcon?: null; badgeColor?: string }[],
+  repos,
+  projects,
   worktreesByRepo: {} as Record<
     string,
     { id: string; projectId?: string; repoId?: string; displayName?: string }[]

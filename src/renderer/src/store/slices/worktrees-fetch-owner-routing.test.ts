@@ -266,7 +266,7 @@ describe('fetchWorktrees', () => {
     store.setState({
       settings: { activeRuntimeEnvironmentId: null } as never,
       repos: []
-    } as Partial<AppState>)
+    })
     runtimeEnvironmentCall.mockResolvedValue({
       id: 'rpc-missing-repo',
       ok: true,
@@ -424,7 +424,7 @@ describe('fetchWorktrees', () => {
           executionHostId: 'runtime:env-1'
         }
       ]
-    } as Partial<AppState>)
+    })
     runtimeEnvironmentCall.mockResolvedValue({
       id: 'rpc-1',
       ok: true,
