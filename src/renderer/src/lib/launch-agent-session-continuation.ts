@@ -34,6 +34,9 @@ type LaunchAgentSessionContinuationArgs = {
   launchChoice?: AgentLaunchChoice
   launchSource: LaunchSource
   signal?: AbortSignal
+  sessionOptions?: Readonly<Record<string, string>>
+  chatSessionOptions?: Readonly<Record<string, string>>
+  agentArgs?: string | null
 }
 
 /** Detected agents, then those that open as a chat on the workspace's host without their CLI. */
@@ -103,7 +106,10 @@ export async function launchAgentSessionContinuation({
   claudeConfigDir,
   launchChoice,
   launchSource,
-  signal
+  signal,
+  sessionOptions,
+  chatSessionOptions,
+  agentArgs
 }: LaunchAgentSessionContinuationArgs): Promise<boolean> {
   const label = getAgentLabel(agent)
   // Blind PTY writes do not prove prompt delivery; claiming success can hide a lost handoff (#22479).
@@ -111,6 +117,9 @@ export async function launchAgentSessionContinuation({
   const delivery = {
     agent,
     worktreeId,
+    ...(sessionOptions ? { sessionOptions: { ...sessionOptions } } : {}),
+    ...(chatSessionOptions !== undefined ? { chatSessionOptions: { ...chatSessionOptions } } : {}),
+    ...(agentArgs !== undefined ? { agentArgs } : {}),
     ...(groupId ? { groupId } : {}),
     prompt,
     promptDelivery: agent === 'claude' ? ('draft' as const) : ('submit-after-ready' as const),
@@ -145,6 +154,10 @@ export async function launchAgentSessionContinuation({
   }
   const request = {
     ...delivery,
+    ...(delivery.sessionOptions ? { launchOptions: delivery.sessionOptions } : {}),
+    ...(delivery.chatSessionOptions !== undefined
+      ? { chatLaunchOptions: delivery.chatSessionOptions }
+      : {}),
     requestId: newAgentLaunchRequestId(),
     workspace: worktreeLaunchWorkspace(worktreeId),
     tuiCustomization: { cwd: initialCwd }

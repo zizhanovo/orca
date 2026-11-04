@@ -4,7 +4,7 @@ src/main/claude/external-config-dir-hooks.test.ts
 src/main/claude/external-config-dir-hooks.ts
 src/main/claude/hook-service.ts
 src/main/ipc/rate-limits.ts
-src/main/provider-account-services.ts
+src/main/providers/accounts/provider-account-services.ts
 src/main/rate-limits/claude-config-dir-candidates.test.ts
 src/main/rate-limits/claude-config-dir-candidates.ts
 src/main/rate-limits/claude-external-config-dir-usage.test.ts

@@ -80,12 +80,12 @@ vi.mock('../browser-manager', () => ({
 vi.mock('../../runtime/browser/browser-tab-renderer-create', () => ({}))
 vi.mock('../../runtime/browser/browser-tab-renderer-close', () => ({}))
 vi.mock('../../runtime/browser/browser-tab-renderer-activate', () => ({}))
-vi.mock('../../ipc/browser-tab-registration-wait', () => ({}))
+vi.mock('../../ipc/browser/browser-tab-registration-wait', () => ({}))
 vi.mock('./browser-extension-api-host', () => ({ emitBrowserExtensionEvent: vi.fn() }))
 vi.mock('./browser-extension-popup-host', () => ({ closeBrowserExtensionPopup: vi.fn() }))
 vi.mock('./browser-extension-support', () => ({ isBrowserExtensionSupportEnabled: () => false }))
 vi.mock('./browser-extension-session-loader', () => ({}))
-vi.mock('./browser-extension-main-window-readiness', () => ({}))
+vi.mock('../browser-main-window-readiness', () => ({}))
 vi.mock('./browser-extension-active-tab', () => ({
   hasBrowserExtensionActiveTab: (_extensionId: string, tabId: number) =>
     mocks.activeGrants.has(tabId)

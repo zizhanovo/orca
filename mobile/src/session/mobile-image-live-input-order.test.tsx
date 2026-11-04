@@ -64,9 +64,6 @@ function fixture(title = 'Terminal', imagePath = '/tmp/orca-image.png', launchAg
         }
         return ok({ send: { accepted: true } })
       }
-      if (method === 'orchestration.workerTerminalUserInput') {
-        return ok({ changed: 1 })
-      }
       throw new Error(`unexpected request: ${method}`)
     }),
     subscribe: () => () => {},
@@ -84,6 +81,8 @@ function fixture(title = 'Terminal', imagePath = '/tmp/orca-image.png', launchAg
   const sendLiveTerminalInputRef = ref<TerminalLiveInputSender>(async () => false)
   const scope = {
     sendTerminalUserInput: terminalInputSend.request,
+    sendTerminalOrderedInput: terminalInputSend.request,
+    terminalRefs: { current: new Map() },
     client,
     clientRef: ref(client),
     activeHandle: 'term-1',
