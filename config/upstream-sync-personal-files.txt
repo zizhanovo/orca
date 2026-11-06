@@ -41,3 +41,9 @@ src/shared/rate-limit-types.ts
 src/shared/tui-agent-resume-config-dir.test.ts
 src/shared/agent-launch/startup/tui-agent-resume-startup.ts
 src/shared/wsl-move/wsl-move-ui-dispositions.ts
+.github/workflows/sync-upstream-releases.yml
+config/upstream-sync-personal-files.txt
+.oxlintrc.json
+config/scripts/fork-install/fork-update-stage.sh
+config/scripts/fork-install/fork-update-swap-when-idle.sh
+config/scripts/fork-install/fork-merge-upstream-tag.sh
