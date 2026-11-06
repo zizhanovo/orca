@@ -1,16 +1,18 @@
 import React, { useEffect } from 'react'
 import { useAppStore } from '../../store'
-import { defaultScopeHost } from '@/lib/default-creation-host'
 import { useActiveAccountOwner } from '@/runtime/use-worktree-runtime-target'
 import { runtimeTargetEnvironmentId } from '@/runtime/runtime-client-target'
 import { useResetCountdownClock } from '@/hooks/useResetCountdownClock'
-import { formatRateLimitWindowChipLabel } from '@/lib/window-label-formatter'
+import { formatRateLimitWindowChipLabel } from '../../../../shared/rate-limit-window-label'
 import { clampUsedPercent } from './tooltip'
 import { formatUsagePercentageLabel } from './usage-percentage-label'
 import { normalizeUsagePercentageDisplay } from '../../../../shared/usage-percentage-display'
 import type { InactiveAccountUsage } from '../../../../shared/rate-limit-types'
+import type { RuntimeClientTarget } from '../../../../shared/runtime-client-target'
 
 const NO_DIRS: InactiveAccountUsage[] = []
+// Why: the tracked folders are paths on this device, so ownership never falls back to the focused server.
+const LOCAL_TARGET: RuntimeClientTarget = { kind: 'local' }
 const REFRESH_MS = 5 * 60_000
 
 function dirLabel(dir: string): string {
@@ -25,7 +27,7 @@ function dirLabel(dir: string): string {
 /** One chip per tracked CLAUDE_CONFIG_DIR folder: name, 7-day usage and time left, so folders compare at a glance. */
 export function ExternalClaudeDirsStatusChips(): React.JSX.Element | null {
   const settings = useAppStore((s) => s.settings)
-  const { target } = useActiveAccountOwner(defaultScopeHost(settings))
+  const { target } = useActiveAccountOwner(LOCAL_TARGET)
   const isLocalOwner = runtimeTargetEnvironmentId(target) === null
   const fetchUsage = useAppStore((s) => s.fetchExternalClaudeDirUsage)
   const dirs = useAppStore((s) => s.rateLimits.externalClaudeDirs) ?? NO_DIRS
@@ -58,7 +60,11 @@ export function ExternalClaudeDirsStatusChips(): React.JSX.Element | null {
             className="inline-flex items-center gap-1 text-[11px] tabular-nums text-muted-foreground"
           >
             <span className="text-foreground/80">{dirLabel(dir.accountId)}</span>
-            <span className={used >= 90 ? 'text-red-500' : used >= 70 ? 'text-yellow-500' : ''}>
+            <span
+              className={
+                used >= 90 ? 'text-destructive' : used >= 70 ? 'text-status-warning-text' : ''
+              }
+            >
               {formatUsagePercentageLabel(used, display)}
             </span>
             {weekly.resetsAt != null ? formatRateLimitWindowChipLabel(weekly, now) : null}

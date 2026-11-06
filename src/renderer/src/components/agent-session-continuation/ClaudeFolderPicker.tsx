@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/select'
 import { translate } from '@/i18n/i18n'
 import type { AgentSessionContinuationRequest } from '@/lib/agent-session-continuation'
-import type { TuiAgent } from '../../../../shared/tui-agent'
+import type { TuiAgent } from '../../../../shared/agent-launch/catalog/tui-agent'
 import {
   buildClaudeContinuationFolderOptions,
   isClaudeFamilyAgent,
@@ -19,18 +19,18 @@ const NO_DIRS: string[] = []
 const DEFAULT_FOLDER_VALUE = '__orca-default__'
 
 /** Which CLAUDE_CONFIG_DIR a handed-off Claude session runs under; only on this device, where the folders live. */
-export function useClaudeContinuationFolder(args: {
-  open: boolean
-  request: AgentSessionContinuationRequest | null
-  agent: TuiAgent | null
-  isLocal: boolean
-  trackedDirs: string[] | undefined
-}): {
+export type ClaudeContinuationFolder = {
   options: ClaudeContinuationFolderOption[]
   dir: string | null
   pick: (dir: string | null) => void
-} {
-  const { open, request, agent, isLocal, trackedDirs } = args
+}
+
+export function useClaudeContinuationFolder(
+  open: boolean,
+  request: AgentSessionContinuationRequest | null,
+  agent: TuiAgent | null,
+  { isLocal, trackedDirs }: { isLocal: boolean; trackedDirs: string[] | undefined }
+): ClaudeContinuationFolder {
   const [picked, setPicked] = useState<{
     request: AgentSessionContinuationRequest | null
     dir: string | null
@@ -57,14 +57,13 @@ export function useClaudeContinuationFolder(args: {
 }
 
 export function ClaudeFolderPicker({
-  options,
-  dir,
-  onPick
+  folder: { options, dir, pick: onPick }
 }: {
-  options: ClaudeContinuationFolderOption[]
-  dir: string | null
-  onPick: (dir: string | null) => void
-}): React.JSX.Element {
+  folder: ClaudeContinuationFolder
+}): React.JSX.Element | null {
+  if (options.length <= 1) {
+    return null
+  }
   return (
     <div className="min-w-0 space-y-1.5">
       <label className="text-xs font-medium">

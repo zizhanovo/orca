@@ -1,11 +1,13 @@
 name: Sync upstream releases
 
-# Daily self-merge of the newest stablyai/orca release tag into claude-config-dirs.
-# Upstream cuts each release tag from main as a sibling branch, so consecutive tags share no
-# release-branch history and phantom-conflict on upstream's own files. A conflicted file that
-# our fork never touched is upstream-vs-upstream: the newer release side always wins (verified
-# for v1.4.243 -> v1.4.245; release-branch-only commits land on main before the next cut).
-# Conflicts on files in config/upstream-sync-personal-files.txt need a human; open one issue.
+# Daily merge of the newest stablyai/orca release tag into claude-config-dirs.
+# The merge itself is config/scripts/fork-install/fork-merge-upstream-tag.sh: upstream tags are
+# sibling branches that move and delete files, so everything not listed in
+# config/upstream-sync-personal-files.txt is reset to the tag.
+# A merge reaches claude-config-dirs only after `pnpm tc` passes, and a passing merge starts the
+# fork build. Anything else lands on upstream-sync/<tag> with an issue, never on the main branch.
+# Pushing a merge that touches .github/workflows needs the FORK_SYNC_TOKEN secret
+# (a token with Contents and Workflows write access); the default token is refused.
 
 on:
   schedule:
@@ -15,6 +17,7 @@ on:
 permissions:
   contents: write
   issues: write
+  actions: write
 
 concurrency:
   group: sync-upstream-releases
@@ -24,12 +27,15 @@ jobs:
   sync:
     if: github.repository != 'stablyai/orca'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ secrets.FORK_SYNC_TOKEN || github.token }}
     steps:
       - uses: actions/checkout@v6
         with:
           ref: claude-config-dirs
           fetch-depth: 0
+          token: ${{ secrets.FORK_SYNC_TOKEN || github.token }}
           persist-credentials: true
 
       - name: Resolve the newest upstream release tag
@@ -37,9 +43,10 @@ jobs:
         run: |
           git remote add upstream https://github.com/stablyai/orca.git
           git fetch -q upstream 'refs/tags/v[0-9]*:refs/tags/upstream-v*' --no-tags
-          latest="$(git tag --list 'upstream-v*' --sort=-v:refname | head -1 | sed 's/^upstream-//')"
+          latest="$(git tag --list 'upstream-v*' --sort=-v:refname | grep -E '^upstream-v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 | sed 's/^upstream-//')"
+          [ -n "$latest" ] || { echo "no release tag found" >&2; exit 1; }
           echo "latest=$latest" >>"$GITHUB_OUTPUT"
-          if git merge-base --is-ancestor "refs/tags/$latest" HEAD; then
+          if git merge-base --is-ancestor "refs/tags/upstream-$latest" HEAD; then
             echo "done=true" >>"$GITHUB_OUTPUT"
             echo "$latest is already merged"
           fi
@@ -47,50 +54,78 @@ jobs:
       - name: Merge the release
         if: steps.tag.outputs.done != 'true'
         id: merge
-        run: |
-          latest="${{ steps.tag.outputs.latest }}"
-          if git merge --no-edit "refs/tags/$latest"; then
-            echo "merged=true" >>"$GITHUB_OUTPUT"
-            exit 0
-          fi
-          # Conflicted: keep only conflicts a human must resolve.
-          personal="$(cat config/upstream-sync-personal-files.txt)"
-          for file in $(git diff --name-only --diff-filter=U); do
-            if grep -qx "$file" "$personal"; then
-              echo "needs-human: $file" >&2
-              continue
-            fi
-            # Upstream-vs-upstream: the newer release side wins.
-            if git diff --name-only --diff-filter=UD | grep -qx "$file"; then
-              git rm -q "$file"
-            else
-              git checkout --theirs -- "$file" && git add "$file"
-            fi
-          done
-          if [ -z "$(git diff --name-only --diff-filter=U)" ]; then
-            git commit --no-edit
-            echo "merged=true" >>"$GITHUB_OUTPUT"
-          else
-            git merge --abort
-            echo "conflicts=$(git diff --name-only --diff-filter=U | paste -sd', ' -)" >>"$GITHUB_OUTPUT"
-          fi
-
-      - name: Push
-        if: steps.merge.outputs.merged == 'true'
-        run: git push origin claude-config-dirs
-
-      - name: Open an issue for human conflicts
-        if: steps.merge.outputs.conflicts != ''
         env:
-          GH_TOKEN: ${{ github.token }}
-          CONFLICTS: ${{ steps.merge.outputs.conflicts }}
           LATEST: ${{ steps.tag.outputs.latest }}
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          set +e
+          out="$(bash config/scripts/fork-install/fork-merge-upstream-tag.sh "refs/tags/upstream-$LATEST")"
+          code=$?
+          set -e
+          echo "$out"
+          case "$code" in
+            0) echo "merged=true" >>"$GITHUB_OUTPUT" ;;
+            10) echo "conflicts=$(echo "$out" | grep '^needs-human:' | paste -sd';' -)" >>"$GITHUB_OUTPUT" ;;
+            *) exit "$code" ;;
+          esac
+
+      - uses: pnpm/action-setup@v4
+        if: steps.merge.outputs.merged == 'true'
+      - uses: actions/setup-node@v6
+        if: steps.merge.outputs.merged == 'true'
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      # Catches what a clean merge cannot: fork files that import a module upstream just moved.
+      - name: Typecheck the merge
+        if: steps.merge.outputs.merged == 'true'
+        id: verify
+        continue-on-error: true
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm tc 2>&1 | tee "$RUNNER_TEMP/typecheck.log"
+
+      - name: Push the merge
+        if: steps.merge.outputs.merged == 'true'
+        id: push
+        continue-on-error: true
+        env:
+          LATEST: ${{ steps.tag.outputs.latest }}
+          VERIFIED: ${{ steps.verify.outcome == 'success' }}
+        run: |
+          if [ "$VERIFIED" = "true" ]; then
+            git push origin HEAD:claude-config-dirs
+          else
+            git push --force origin "HEAD:refs/heads/upstream-sync/$LATEST"
+          fi
+
+      - name: Start the fork build
+        if: steps.verify.outcome == 'success' && steps.push.outcome == 'success'
+        run: gh workflow run fork-mac-build.yml --repo "$GITHUB_REPOSITORY" --ref claude-config-dirs
+
+      - name: Open an issue when a person is needed
+        if: steps.merge.outputs.conflicts != '' || steps.verify.outcome == 'failure' || steps.push.outcome == 'failure'
+        env:
+          LATEST: ${{ steps.tag.outputs.latest }}
+          CONFLICTS: ${{ steps.merge.outputs.conflicts }}
+          VERIFY: ${{ steps.verify.outcome }}
+          PUSH: ${{ steps.push.outcome }}
+        run: |
           gh label create upstream-sync --repo "$GITHUB_REPOSITORY" --color 1d76db --description "Upstream release merge needs a human" 2>/dev/null || true
-          body="Merging \`$LATEST\` into \`claude-config-dirs\` conflicted on fork-owned files: $CONFLICTS. Resolve locally, commit the merge, and push."
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          if [ -n "$CONFLICTS" ]; then
+            body="Merging \`$LATEST\` was not attempted: fork-owned files need a person ($CONFLICTS). Fix config/upstream-sync-personal-files.txt or the files, merge locally and push. Run: $run_url"
+          elif [ "$PUSH" = "failure" ]; then
+            body="Merging \`$LATEST\` succeeded but the push was refused. A merge that changes .github/workflows needs a FORK_SYNC_TOKEN secret with Contents and Workflows write access. Run: $run_url"
+          else
+            tail_log="$(tail -n 40 "$RUNNER_TEMP/typecheck.log" 2>/dev/null || true)"
+            body="Merging \`$LATEST\` is on branch \`upstream-sync/$LATEST\` but \`pnpm tc\` failed, so claude-config-dirs was left alone. Run: $run_url"$'\n\n```\n'"$tail_log"$'\n```'
+          fi
           existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --label upstream-sync --json number --jq '.[0].number' 2>/dev/null || true)"
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
           else
-            gh issue create --repo "$GITHUB_REPOSITORY" --title "Upstream sync needs a human merge ($LATEST)" --body "$body" --label upstream-sync
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "Upstream sync needs attention ($LATEST)" --body "$body" --label upstream-sync
           fi

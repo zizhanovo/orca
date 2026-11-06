@@ -1,4 +1,4 @@
-import type { AgentHookInstallStatus } from '../../shared/agent-hook-types'
+import type { AgentHookInstallStatus } from '../../shared/agent-hook-listener/configuration/agent-hook-types'
 import { resolveExternalClaudeUsageDirs } from '../rate-limits/claude-external-config-dir-usage'
 import { ClaudeHookService } from './hook-service'
 

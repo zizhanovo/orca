@@ -1,6 +1,5 @@
-import { claudeConfigDirFromTranscript } from '../../../../shared/tui-agent-resume-startup'
-import { resolveTuiAgentLaunchEnv } from '../../../../shared/tui-agent-launch-defaults'
-import type { TuiAgent } from '../../../../shared/tui-agent'
+import { claudeConfigDirFromTranscript } from '../../../../shared/agent-launch/startup/tui-agent-resume-startup'
+import type { TuiAgent } from '../../../../shared/agent-launch/catalog/tui-agent'
 
 export type ClaudeContinuationFolderOption = {
   /** Absolute CLAUDE_CONFIG_DIR; null means Orca's own account routing decides. */
@@ -55,14 +54,12 @@ export function buildClaudeContinuationFolderOptions(args: {
 }
 
 /** Launch env for an agent, plus another Claude config folder when one was picked (Claude family only). */
-export function launchEnvWithClaudeDir(
+export function withClaudeConfigDir(
   agent: TuiAgent,
-  settings: Parameters<typeof resolveTuiAgentLaunchEnv>[1],
-  platform: NodeJS.Platform,
-  { claudeConfigDir }: { claudeConfigDir?: string | null }
+  agentEnv: Record<string, string>,
+  claudeConfigDir: string | null | undefined
 ): Record<string, string> {
-  return {
-    ...resolveTuiAgentLaunchEnv(agent, settings, platform),
-    ...(claudeConfigDir && isClaudeFamilyAgent(agent) ? { CLAUDE_CONFIG_DIR: claudeConfigDir } : {})
-  }
+  return claudeConfigDir && isClaudeFamilyAgent(agent)
+    ? { ...agentEnv, CLAUDE_CONFIG_DIR: claudeConfigDir }
+    : agentEnv
 }

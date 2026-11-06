@@ -212,12 +212,27 @@
       "rules": {
         "max-lines": ["error", { "max": 800, "skipBlankLines": true, "skipComments": true }]
       }
+    },
+    {
+      "files": ["src/shared/global-settings-types.ts"],
+      "rules": {
+        "max-lines": ["error", { "max": 320, "skipBlankLines": true, "skipComments": true }]
+      }
+    },
+    {
+      "files": [
+        "src/renderer/src/components/agent-session-continuation/AgentSessionContinuationDialog.tsx"
+      ],
+      "rules": {
+        "max-lines": ["error", { "max": 420, "skipBlankLines": true, "skipComments": true }]
+      }
     }
   ],
   "ignorePatterns": [
     "src/main/acp/generated/acp-protocol.generated.ts",
     "src/shared/rpc-contract/rpc-params-catalog.generated.ts",
     "src/cli/bundled-skill-guides.ts",
+    "resources/plugins/declarative/*.mjs",
     "**/node_modules",
     "**/dist",
     "**/out",
