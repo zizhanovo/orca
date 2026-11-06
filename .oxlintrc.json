@@ -218,6 +218,14 @@
       "rules": {
         "max-lines": ["error", { "max": 320, "skipBlankLines": true, "skipComments": true }]
       }
+    },
+    {
+      "files": [
+        "src/renderer/src/components/agent-session-continuation/AgentSessionContinuationDialog.tsx"
+      ],
+      "rules": {
+        "max-lines": ["error", { "max": 420, "skipBlankLines": true, "skipComments": true }]
+      }
     }
   ],
   "ignorePatterns": [

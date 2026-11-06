@@ -1,5 +1,5 @@
-import { claudeConfigDirFromTranscript } from '../../../../shared/tui-agent-resume-startup'
-import type { TuiAgent } from '../../../../shared/tui-agent'
+import { claudeConfigDirFromTranscript } from '../../../../shared/agent-launch/startup/tui-agent-resume-startup'
+import type { TuiAgent } from '../../../../shared/agent-launch/catalog/tui-agent'
 
 export type ClaudeContinuationFolderOption = {
   /** Absolute CLAUDE_CONFIG_DIR; null means Orca's own account routing decides. */

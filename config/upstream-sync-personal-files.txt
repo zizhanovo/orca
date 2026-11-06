@@ -26,7 +26,6 @@ src/renderer/src/components/status-bar/ExternalClaudeDirsStatusChips.tsx
 src/renderer/src/components/status-bar/InlineProviderUsage.tsx
 src/renderer/src/components/status-bar/StatusBarSurface.tsx
 src/renderer/src/components/status-bar/UsageRosterPanel.tsx
-src/renderer/src/components/status-bar/claude-status-sign-in.test.tsx
 src/renderer/src/i18n/locales/en.json
 src/renderer/src/i18n/locales/zh.json
 src/renderer/src/lib/launch-agent-in-new-tab-args.ts
@@ -40,5 +39,5 @@ src/shared/global-settings-types.ts
 src/shared/rate-limit-state-factory.ts
 src/shared/rate-limit-types.ts
 src/shared/tui-agent-resume-config-dir.test.ts
-src/shared/tui-agent-resume-startup.ts
+src/shared/agent-launch/startup/tui-agent-resume-startup.ts
 src/shared/wsl-move/wsl-move-ui-dispositions.ts

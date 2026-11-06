@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildAgentResumeStartupPlan,
   claudeConfigDirFromTranscript
-} from './tui-agent-resume-startup'
+} from './agent-launch/startup/tui-agent-resume-startup'
 
 describe('claudeConfigDirFromTranscript', () => {
   it('returns the folder holding projects/', () => {

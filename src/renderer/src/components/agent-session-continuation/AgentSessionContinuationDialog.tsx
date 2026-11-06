@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from 'react'
 import { Loader2, MessageSquarePlus } from 'lucide-react'
 import { AgentLaunchPicker } from '@/components/agent/AgentLaunchPicker'
 import {
-  agentPickerLaunchInputs,
+  agentPickerFreshLaunchInputs,
   type AgentPickerDraft,
   type AgentPickerEntry
-} from '../../../../shared/agent-launch-picker'
+} from '../../../../shared/agent-launch/picker/agent-launch-picker'
 import { useAgentMenuObservation } from '@/components/tab-bar/use-new-tab-agent-menu-rows'
 import { useAgentDetectionTargetForWorktree } from '@/hooks/useAgentDetectionTarget'
 import type { AgentLaunchSurface } from '@/lib/agent-session-launch-plan'
@@ -38,8 +38,8 @@ import {
 } from '@/lib/agent-session-continuation'
 import { launchAgentSessionContinuation } from '@/lib/launch-agent-session-continuation'
 import { useAppStore } from '@/store'
-import { isTuiAgentEnabled } from '../../../../shared/tui-agent-selection'
-import type { TuiAgent } from '../../../../shared/tui-agent'
+import { isTuiAgentEnabled } from '../../../../shared/agent-launch/catalog/tui-agent-selection'
+import type { TuiAgent } from '../../../../shared/agent-launch/catalog/tui-agent'
 import {
   chooseInitialContinuationAgent,
   isContinuationAgentAllowed
@@ -164,10 +164,7 @@ export function AgentSessionContinuationDialog({
     })
   const selection = observation.selectionFor(selectedAgent, currentPick?.surface)
 
-  const claudeFolder = useClaudeContinuationFolder({
-    open,
-    request,
-    agent: selectedAgent,
+  const claudeFolder = useClaudeContinuationFolder(open, request, selectedAgent, {
     isLocal: detectionTarget?.kind === 'local',
     trackedDirs: settings?.claudeUsageConfigDirs
   })
@@ -183,7 +180,14 @@ export function AgentSessionContinuationDialog({
   }, [starting])
 
   const handleStart = async (): Promise<void> => {
-    if (!request || detecting || !selectedAgent || starting || !selection.ready) {
+    if (
+      !request ||
+      detecting ||
+      !selectedAgent ||
+      starting ||
+      !selection.ready ||
+      !selection.choice
+    ) {
       return
     }
     const prompt = buildAgentSessionContinuationPrompt(request.source, contextMode)
@@ -199,7 +203,16 @@ export function AgentSessionContinuationDialog({
       initialCwd: request.initialCwd,
       claudeConfigDir: claudeFolder.dir,
       launchChoice: selection.choice,
-      ...(currentPick?.draft ? agentPickerLaunchInputs(currentPick.draft, currentPick.entry) : {}),
+      ...(currentPick?.draft
+        ? agentPickerFreshLaunchInputs(
+            currentPick.draft,
+            {
+              surface: selection.choice.route === 'terminal-tui' ? 'terminal' : 'chat',
+              executionHostId: selection.choice.executionHostId
+            },
+            currentPick.entry
+          )
+        : {}),
       launchSource: request.launchSource,
       signal: abortRef.current?.signal
     })
@@ -316,13 +329,7 @@ export function AgentSessionContinuationDialog({
             </div>
           </div>
 
-          {claudeFolder.options.length > 1 ? (
-            <ClaudeFolderPicker
-              options={claudeFolder.options}
-              dir={claudeFolder.dir}
-              onPick={claudeFolder.pick}
-            />
-          ) : null}
+          <ClaudeFolderPicker folder={claudeFolder} />
 
           <div className="min-w-0 space-y-1.5">
             <label className="text-xs font-medium">
