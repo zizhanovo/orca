@@ -4,9 +4,9 @@ import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Switch } from '@/components/ui/switch'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '../../store'
-import { defaultScopeHost } from '@/lib/default-creation-host'
 import { useActiveAccountOwner } from '@/runtime/use-worktree-runtime-target'
 import { runtimeTargetEnvironmentId } from '@/runtime/runtime-client-target'
+import type { RuntimeClientTarget } from '../../../../shared/runtime-client-target'
 import {
   InlineUsageBars,
   InlineUsageSkeleton,
@@ -14,6 +14,8 @@ import {
 } from './InlineProviderUsage'
 
 const NO_DIRS: string[] = []
+// Why: the tracked folders are paths on this device, so ownership never falls back to the focused server.
+const LOCAL_TARGET: RuntimeClientTarget = { kind: 'local' }
 
 function dirLabel(dir: string): string {
   const segments = dir.split(/[\\/]/).filter(Boolean)
@@ -22,8 +24,7 @@ function dirLabel(dir: string): string {
 
 /** Read-only usage for user-picked CLAUDE_CONFIG_DIR folders (host-local only). */
 export function ExternalClaudeDirsSection(): React.JSX.Element | null {
-  const settings = useAppStore((s) => s.settings)
-  const { target: runtimeTarget } = useActiveAccountOwner(defaultScopeHost(settings))
+  const { target: runtimeTarget } = useActiveAccountOwner(LOCAL_TARGET)
   // Why: the folders are paths on this device, so a remote-owned account has nothing to show.
   const isLocalOwner = runtimeTargetEnvironmentId(runtimeTarget) === null
   const fetchExternalClaudeDirUsage = useAppStore((s) => s.fetchExternalClaudeDirUsage)
